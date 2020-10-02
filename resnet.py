@@ -9,7 +9,6 @@ from tensorflow.python.training import moving_averages
 
 class ResNet:
     def __init__(self, config):
-
         self._num_residual_units = config.num_residual_units #unit 개수, 즉 n의 크기
         self._batch_size = config.batch_size
         self._relu_leakiness = config.relu_leakiness
@@ -20,44 +19,49 @@ class ResNet:
         self.Y = tf.placeholder(tf.float32, [None, self._num_classes], name="Y")
         self.extra_train_ops = [] # batch norm 파라미터 학습을 위한 operation 저장할 변수
 
-        filters = [16, X1, X2, 64] # 층별 filter 개수 (output channel)
+        # TODO 1. 층별 filter 의 output channel 갯수 16(input) -> 16(X1) -> 32(X2) -> 64
+        filters = [16, 16, 32, 64]
         activate_before_residual = [True, False, False] # activation 연산 수행 시점의 residual 연산 전후 여부
 
         with tf.variable_scope('init'): # 최초 convolutional layer
-          x = self._conv('init_conv', self.X, X3, X4, X5, strides=X6)
+            # TODO 2. Initial Convolution
+            # ppt에 있는 Conv2d(input_channel=3, output_channel=16, kernel_size=3, stride=1, padding=1) 를 구현
+            # _conv(name, x, filter_size(X3), in_filters(X4), out_filters(X5), strides(X6))
+            x = self._conv(name='init_conv', x=self.X, filter_size=filters[0], in_filters=3, out_filters=filters[1], strides=[1, 1, 1, 1])
 
         with tf.variable_scope('unit_1_0'):
-          x = self._residual(x, filters[0], filters[1], activate_before_residual[0], strides=[1, 1, 1, 1]) #첫 번째 residual unit
+            x = self._residual(x, filters[0], filters[1], activate_before_residual[0], strides=[1, 1, 1, 1]) #첫 번째 residual unit
+
         for i in range(1, self._num_residual_units): #나머지 residual unit (n이 3이라면 두번째, 세번째 unit들)
-          with tf.variable_scope('unit_1_%d' % i):
-            x = self._residual(x, filters[1], filters[1], strides=[1, 1, 1, 1])
+            with tf.variable_scope('unit_1_%d' % i):
+                x = self._residual(x, filters[1], filters[1], strides=[1, 1, 1, 1])
 
         with tf.variable_scope('unit_2_0'):
-          x = self._residual(x, filters[1], filters[2], activate_before_residual[1], strides=[1, 2, 2, 1])
+            x = self._residual(x, filters[1], filters[2], activate_before_residual[1], strides=[1, 2, 2, 1])
         for i in range(1, self._num_residual_units):
-          with tf.variable_scope('unit_2_%d' % i):
-            x = self._residual(x, filters[2], filters[2], strides=[1, 1, 1, 1])
+            with tf.variable_scope('unit_2_%d' % i):
+                x = self._residual(x, filters[2], filters[2], strides=[1, 1, 1, 1])
 
         with tf.variable_scope('unit_3_0'):
-          x = self._residual(x, filters[2], filters[3], activate_before_residual[2], strides=[1, 2, 2, 1])
+            x = self._residual(x, filters[2], filters[3], activate_before_residual[2], strides=[1, 2, 2, 1])
         for i in range(1, self._num_residual_units):
-          with tf.variable_scope('unit_3_%d' % i):
-            x = self._residual(x, filters[3], filters[3], strides=[1, 1, 1, 1])
+            with tf.variable_scope('unit_3_%d' % i):
+                x = self._residual(x, filters[3], filters[3], strides=[1, 1, 1, 1])
 
         with tf.variable_scope('unit_last'):
-          x = self._batch_norm('final_bn', x)
-          x = self._relu(x, self._relu_leakiness)
-          x = self._global_avg_pool(x) # (?, 8, 8, 64) 크기의 feature maps을 average pooling을 통해 (?, 8, 8)로 요약 및 축소
+            x = self._batch_norm('final_bn', x)
+            x = self._relu(x, self._relu_leakiness)
+            x = self._global_avg_pool(x) # (?, 8, 8, 64) 크기의 feature maps을 average pooling을 통해 (?, 8, 8)로 요약 및 축소
 
         with tf.variable_scope('logit'):
-          logits = self._fully_connected(x, self._num_classes) # fully connected layer
-          self.predictions = tf.nn.softmax(logits)
-          self.predictions = tf.argmax(self.predictions, 1, name="predictions")
+            logits = self._fully_connected(x, self._num_classes) # fully connected layer
+            self.predictions = tf.nn.softmax(logits)
+            self.predictions = tf.argmax(self.predictions, 1, name="predictions")
 
         with tf.variable_scope('loss'):
-          xent = tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=self.Y)
-          self.loss = tf.reduce_mean(xent, name='xent')
-          self.loss += self._decay()
+            xent = tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=self.Y)
+            self.loss = tf.reduce_mean(xent, name='xent')
+            self.loss += self._decay()
 
         with tf.name_scope("accuracy"):
             correct_predictions = tf.equal(self.predictions, tf.argmax(self.Y, 1))
@@ -74,7 +78,6 @@ class ResNet:
             return tf.nn.conv2d(x, kernel, strides, padding='SAME') # convolution 연산
 
     def _residual(self, x, in_filter, out_filter, activate_before_residual=False, strides=[1, 1, 1, 1]):
-
         if activate_before_residual:
             with tf.variable_scope('common_activation'):
                 x = self._batch_norm('init_bn', x)
@@ -86,13 +89,23 @@ class ResNet:
                 x = self._batch_norm('init_bn', x)
                 x = self._relu(x, self._relu_leakiness)
 
+        # sub1
+        # Conv2d, BatchNorm, ReLU (BatchNorm & ReLU are already calculated)
         with tf.variable_scope('sub1'):
-            x = self._conv('conv1', x, X7, in_filter, out_filter, X8)
-
+            # TODO 2.
+            # _residual(x, in_filter, out_filter, activate_before_residual=False, strides=[1, 1, 1, 1])
+            # _conv(name, x, filter_size(X7), in_filters, out_filters, strides(X8))
+            x = self._conv('conv1', x, out_filter, in_filter, out_filter, strides)
+        # sub2
+        # Conv2d, BatchNorm, Shortcut Connection, ReLU
         with tf.variable_scope('sub2'):
             x = self._batch_norm('bn2', x)
             x = self._relu(x, self._relu_leakiness)
-            x = self._conv('conv2', x, X9, out_filter, out_filter, X10)
+
+            # TODO 3.
+            # _residual(x, in_filter, out_filter, activate_before_residual=False, strides=[1, 1, 1, 1])
+            # _conv(name, x, filter_size(X7), in_filters, out_filters, strides(X8))
+            x = self._conv('conv2', x, out_filter, out_filter, out_filter, strides)
 
         with tf.variable_scope('sub_add'):
             if in_filter != out_filter: # stride 크기가 2일 때 channel 크기가 안맞는 경우 크기 조정을 통해 skip connection이 원활하게 조정
@@ -119,6 +132,9 @@ class ResNet:
                 'gamma', params_shape, tf.float32,
                 initializer=tf.constant_initializer(1.0, tf.float32))
 
+            # tf.nn.moments calculate the mean and variance of x
+            # tf.nn.moments(x, axes, shift=None, keepdims=False, name=None)
+            # axes => array of ints, axes along which to compute mean and variance
             mean, variance = tf.nn.moments(x, [0, 1, 2], name='moments')
 
             moving_mean = tf.get_variable(
@@ -151,7 +167,7 @@ class ResNet:
         return tf.nn.xw_plus_b(x, w, b)
 
     def _global_avg_pool(self, x):
-        # (?, 8, 8, 64) 크기의 feature maps을 average pooling을 통해 (?, 8, 8)로 요약 및 축소
+        # (?, 8, 8, 64) 크기의 feature maps을 average pooling을 통해 (?, 1, 1, 64)로 요약 및 축소
         assert x.get_shape().ndims == 4
         return tf.reduce_mean(x, [1, 2])
 

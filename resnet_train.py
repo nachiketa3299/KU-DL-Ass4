@@ -5,26 +5,29 @@ import datetime
 from tensorflow.keras.datasets.cifar10 import load_data
 import CIFAR.data_helpers as dh
 from CIFAR.resnet import ResNet
+import presets_and_results
+
+p = presets_and_results.Preset(1)
 
 # Model Hyperparameters
-tf.flags.DEFINE_float("lr", 0.1, "learning rate (default=0.1)")
-tf.flags.DEFINE_float("lr_decay", 0.1, "learning rate decay rate(default=0.1)")
-tf.flags.DEFINE_float("l2_reg_lambda", 0.0001, "L2 regularization lambda (default: 0.0)")
-tf.flags.DEFINE_float("relu_leakiness", 0.1, "relu leakiness (default: 0.1)")
-tf.flags.DEFINE_integer("num_residual_units", 3, "The number of residual_units (default: 5)")
-tf.flags.DEFINE_integer("num_classes", 10, "The number of classes (default: 10)")
+tf.flags.DEFINE_float("lr", p.lr, "learning rate (default=0.1)")
+tf.flags.DEFINE_float("lr_decay", p.lr_decay, "learning rate decay rate(default=0.1)")
+tf.flags.DEFINE_float("l2_reg_lambda", p.l2_reg_lambda, "L2 regularization lambda (default: 0.0)")
+tf.flags.DEFINE_float("relu_leakiness", p.relu_leakiness, "relu leakiness (default: 0.1)")
+tf.flags.DEFINE_integer("num_residual_units", p.num_residual_units, "The number of residual_units (default: 5)")
+tf.flags.DEFINE_integer("num_classes", p.num_classes, "The number of classes (default: 10)")
 
 # Training parameters
-tf.flags.DEFINE_integer("batch_size", 128, "Batch Size (default: 64)")
-tf.flags.DEFINE_integer("num_epochs", 200, "Number of training epochs (default: 200)")
-tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
-tf.flags.DEFINE_integer("checkpoint_every", 100, "Save model after this many steps (default: 100)")
-tf.flags.DEFINE_integer("num_checkpoints", 3, "Number of checkpoints to store (default: 5)")
-tf.flags.DEFINE_boolean("data_augmentation", True, "data augmentation option")
+tf.flags.DEFINE_integer("batch_size", p.batch_size, "Batch Size (default: 64)")
+tf.flags.DEFINE_integer("num_epochs", p.num_epochs, "Number of training epochs (default: 200)")
+tf.flags.DEFINE_integer("evaluate_every", p.evaluate_every, "Evaluate model on dev set after this many steps (default: 100)")
+tf.flags.DEFINE_integer("checkpoint_every", p.checkpoint_every, "Save model after this many steps (default: 100)")
+tf.flags.DEFINE_integer("num_checkpoints", p.num_checkpoints, "Number of checkpoints to store (default: 5)")
+tf.flags.DEFINE_boolean("data_augmentation", p.data_augmentation, "data augmentation option")
 
 # Misc Parameters
-tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
-tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
+tf.flags.DEFINE_boolean("allow_soft_placement", p.allow_soft_placement, "Allow device soft device placement")
+tf.flags.DEFINE_boolean("log_device_placement", p.log_device_placement, "Log placement of ops on devices")
 FLAGS = tf.flags.FLAGS
 
 (x_train_val, y_train_val), (x_test, y_test) = load_data()
