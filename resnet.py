@@ -20,33 +20,68 @@ class ResNet:
         self.extra_train_ops = [] # batch norm 파라미터 학습을 위한 operation 저장할 변수
 
         # TODO 1. 층별 filter 의 output channel 갯수 16(input) -> 16(X1) -> 32(X2) -> 64
-        filters = [16, 16, 32, 64]
+        filters = [16,
+                   16,   # X1
+                   32,   # X2
+                   64]
+
+        self.FILTER_SIZE = 3 # filter size가 3이 아닌 경우가 없어서 그냥 선언함
         activate_before_residual = [True, False, False] # activation 연산 수행 시점의 residual 연산 전후 여부
 
-        with tf.variable_scope('init'): # 최초 convolutional layer
+        with tf.variable_scope('init'): # 최초 convolutional layer (input이 들어감)
             # TODO 2. Initial Convolution
-            # ppt에 있는 Conv2d(input_channel=3, output_channel=16, kernel_size=3, stride=1, padding=1) 를 구현
-            # _conv(name, x, filter_size(X3), in_filters(X4), out_filters(X5), strides(X6))
-            x = self._conv(name='init_conv', x=self.X, filter_size=filters[0], in_filters=3, out_filters=filters[1], strides=[1, 1, 1, 1])
+            x = self._conv(name='init_conv',
+                           x=self.X,
+                           filter_size=self.FILTER_SIZE,                # X3: Conv시 필터 사이즈 (3)
+                           in_filters=self.X.get_shape().as_list()[-1], # X4: 인풋 이미지의 채널 수 (3)
+                           out_filters=filters[0],                      # X5: 다음 레이어의 채널 수 (16)
+                           strides=[1, 1, 1, 1])                        # X6: 스트라이드는 한 칸 씩
 
         with tf.variable_scope('unit_1_0'):
-            x = self._residual(x, filters[0], filters[1], activate_before_residual[0], strides=[1, 1, 1, 1]) #첫 번째 residual unit
+            # 첫 번째 residual unit
+            x = self._residual(x_in=x,
+                               in_filter=filters[0],  # 16
+                               out_filter=filters[1], # 16
+                               activate_before_residual=activate_before_residual[0], # True
+                               strides=[1, 1, 1, 1])
 
         for i in range(1, self._num_residual_units): #나머지 residual unit (n이 3이라면 두번째, 세번째 unit들)
             with tf.variable_scope('unit_1_%d' % i):
-                x = self._residual(x, filters[1], filters[1], strides=[1, 1, 1, 1])
+                x = self._residual(x_in=x,
+                                   in_filter=filters[1], # 16
+                                   out_filter=filters[1], # 16
+                                   activate_before_residual=False,
+                                   strides=[1, 1, 1, 1])
 
         with tf.variable_scope('unit_2_0'):
-            x = self._residual(x, filters[1], filters[2], activate_before_residual[1], strides=[1, 2, 2, 1])
+            # 여기서 채널 수가 증가함 (16 -> 32)
+            # 내 생각인데 수축도 여기서 일어나야 함 (32, 32, 16) -> (16, 16, 32)
+            x = self._residual(x_in=x,
+                               in_filter=filters[1], # 16
+                               out_filter=filters[2], # 32
+                               activate_before_residual=activate_before_residual[1], # True
+                               strides=[1, 2, 2, 1])
         for i in range(1, self._num_residual_units):
             with tf.variable_scope('unit_2_%d' % i):
-                x = self._residual(x, filters[2], filters[2], strides=[1, 1, 1, 1])
+                x = self._residual(x_in=x,
+                                   in_filter=filters[2], # 32
+                                   out_filter=filters[2], # 32
+                                   activate_before_residual=False,
+                                   strides=[1, 1, 1, 1])
 
         with tf.variable_scope('unit_3_0'):
-            x = self._residual(x, filters[2], filters[3], activate_before_residual[2], strides=[1, 2, 2, 1])
+            x = self._residual(x_in=x,
+                               in_filter=filters[2], # 32
+                               out_filter=filters[3], # 64
+                               activate_before_residual=activate_before_residual[2], # True
+                               strides=[1, 2, 2, 1])
         for i in range(1, self._num_residual_units):
             with tf.variable_scope('unit_3_%d' % i):
-                x = self._residual(x, filters[3], filters[3], strides=[1, 1, 1, 1])
+                x = self._residual(x_in=x,
+                                   in_filter=filters[3], # 64
+                                   out_filter=filters[3], # 64
+                                   activate_before_residual=False,
+                                   strides=[1, 1, 1, 1])
 
         with tf.variable_scope('unit_last'):
             x = self._batch_norm('final_bn', x)
@@ -77,42 +112,46 @@ class ResNet:
                 tf.float32, initializer=tf.random_normal_initializer(stddev=np.sqrt(2.0 / n)))
             return tf.nn.conv2d(x, kernel, strides, padding='SAME') # convolution 연산
 
-    def _residual(self, x, in_filter, out_filter, activate_before_residual=False, strides=[1, 1, 1, 1]):
+    def _residual(self, x_in, in_filter, out_filter, activate_before_residual=False, strides=[1, 1, 1, 1]):
         if activate_before_residual:
             with tf.variable_scope('common_activation'):
-                x = self._batch_norm('init_bn', x)
+                x = self._batch_norm('init_bn', x_in)
                 x = self._relu(x, self._relu_leakiness)
                 orig_x = x # skip connection 때 넘 겨줄 feature orig_x에 복사
         else:
             with tf.variable_scope('residual_activation'):
-                orig_x = x # skip connection 때 넘 겨줄 feature orig_x에 복사
-                x = self._batch_norm('init_bn', x)
+                orig_x = x_in # skip connection 때 넘 겨줄 feature orig_x에 복사
+                x = self._batch_norm('init_bn', x_in)
                 x = self._relu(x, self._relu_leakiness)
 
         # sub1
         # Conv2d, BatchNorm, ReLU (BatchNorm & ReLU are already calculated)
         with tf.variable_scope('sub1'):
-            # TODO 2.
-            # _residual(x, in_filter, out_filter, activate_before_residual=False, strides=[1, 1, 1, 1])
-            # _conv(name, x, filter_size(X7), in_filters, out_filters, strides(X8))
-            x = self._conv('conv1', x, out_filter, in_filter, out_filter, strides)
+            # TODO 2. SUB1 블록
+            x = self._conv(name='conv1',
+                           x=x,
+                           filter_size=self.FILTER_SIZE,  # X7
+                           in_filters=in_filter,
+                           out_filters=out_filter,
+                           strides=[1, 1, 1, 1])          # X8
+
         # sub2
         # Conv2d, BatchNorm, Shortcut Connection, ReLU
         with tf.variable_scope('sub2'):
             x = self._batch_norm('bn2', x)
             x = self._relu(x, self._relu_leakiness)
-
-            # TODO 3.
-            # _residual(x, in_filter, out_filter, activate_before_residual=False, strides=[1, 1, 1, 1])
-            # _conv(name, x, filter_size(X7), in_filters, out_filters, strides(X8))
-            x = self._conv('conv2', x, out_filter, out_filter, out_filter, strides)
+            # TODO 3. SUB2 블록
+            x = self._conv(name='conv2',
+                           x=x,
+                           filter_size=self.FILTER_SIZE, # X9
+                           in_filters=out_filter,
+                           out_filters=out_filter,
+                           strides=strides)         # X10
 
         with tf.variable_scope('sub_add'):
             if in_filter != out_filter: # stride 크기가 2일 때 channel 크기가 안맞는 경우 크기 조정을 통해 skip connection이 원활하게 조정
                 orig_x = tf.nn.avg_pool(orig_x, strides, strides, 'VALID') # pooling으로 feature map 크기 맞추고
-                orig_x = tf.pad(
-                    orig_x, [[0, 0], [0, 0], [0, 0],
-                             [(out_filter - in_filter) // 2, (out_filter - in_filter) // 2]]) # padding으로 채널 맞춤
+                orig_x = tf.pad(orig_x, [[0, 0], [0, 0], [0, 0], [(out_filter - in_filter) // 2, (out_filter - in_filter) // 2]]) # padding으로 채널 맞춤
             x += orig_x # skip connection
 
         tf.logging.debug('image after unit %s', x.get_shape())
@@ -157,7 +196,7 @@ class ResNet:
 
     def _fully_connected(self, x, out_dim):
         dim = tf.reduce_prod(x.get_shape()[1:]).eval()
-        print(dim)
+        print(f"- dim: {dim}")
         x = tf.reshape(x, [-1, dim])
         w = tf.get_variable(
             'DW', [dim, out_dim],

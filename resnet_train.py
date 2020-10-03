@@ -3,8 +3,8 @@ import os
 import time
 import datetime
 from tensorflow.keras.datasets.cifar10 import load_data
-import CIFAR.data_helpers as dh
-from CIFAR.resnet import ResNet
+import data_helpers as dh
+from resnet import ResNet
 import presets_and_results
 
 p = presets_and_results.Preset(1)
