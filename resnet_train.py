@@ -11,7 +11,7 @@ import math
 import pickle
 
 
-presets = [1, 2]
+presets = [1, 2, 3]
 for preset in presets:
     p = pr.Preset(1)
     pr.Preset().del_all_flags(tf.flags.FLAGS)
