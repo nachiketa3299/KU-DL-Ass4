@@ -71,7 +71,15 @@ class Preset:
         #     setTrainingParameters(64, 200, 100, 100, 5, True)
 
         if preset_num == 1:
-            setModelParameters(0.1, 0.1, 0.001, 0.1, 3, 10)
+            setModelParameters(0.1, 1, 0.001, 0.1, 5, 10)
+            setTrainingParameters(128, 200, 100, 100, 3, True)
+        # chane lr decay to 0.96 (1: 1.0)
+        elif preset_num ==2:
+            setModelParameters(0.1, 0.96, 0.001, 0.1, 5, 10)
+            setTrainingParameters(128, 200, 100, 100, 3, True)
+        # change num_resicual_units to 3 (2: 5)
+        elif preset_num ==3:
+            setModelParameters(0.1, 0.96, 0.001, 0.1, 3, 10)
             setTrainingParameters(128, 200, 100, 100, 3, True)
 
     @classmethod
