@@ -121,7 +121,7 @@ for preset in presets:
                 time_str = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
                 prog = FLAGS.num_epochs * math.ceil(45000/FLAGS.batch_size)
                 # print("{}: step {}, lr {}, loss {:g}, acc {:g}".format(time_str, step, lr, loss, accuracy))
-                print(f"- Pre|Tstmp={p.preset}|{p.timestamp} [{time_str}] Step=({format(step, '05')}/{format(prog, '05')}) Loss={format(loss, '<8g')} Acc={format(accuracy, '<9g')}")
+                print(f"- Pre-Tstmp={p.preset}-({p.timestamp}) [{time_str}] Step=({format(step, '05')}/{format(prog, '05')}) Loss={format(loss, '<8g')} Acc={format(accuracy, '<9g')}")
                 train_summary_writer.add_summary(summaries, step)
 
             def dev_step(x_batch, y_batch, writer=None):
