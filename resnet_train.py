@@ -146,7 +146,7 @@ for preset in presets:
                 with open(filename, 'a') as ttxt:
                     s = ''
                     for key in p.__dict__.keys():
-                        s += p.__dict__[key] + '\t'
+                        s += str(p.__dict__[key]) + '\t'
                     ttxt.write(s)
 
                 filename = f'./INFOS/{p.preset}_{p.timestamp}.pickle'

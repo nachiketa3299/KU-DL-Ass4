@@ -45,7 +45,7 @@ for pckl in pickles:
         with open('eval_result.txt', 'w') as f:
             s = ''
             for key in P.__dict__.keys():
-                s += P.__dict__[key] + '\t'
+                s += str(P.__dict__[key]) + '\t'
             f.write(s)
 
         with open(pckl, 'wb') as pW:
