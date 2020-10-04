@@ -1,12 +1,14 @@
 import tensorflow as tf
-import CIFAR.data_helpers as dh
+import data_helpers as dh
 import numpy as np
 
+
+# 이부분에 사용할 모델의 Timestamp를 적으면 추론 시작
+whatModelTimestamp = input("- 추론에 사용할 모델의 타임스탬프를 입력하세요.")
+
 # Eval Parameters
-tf.flags.DEFINE_string("checkpoint_dir", "./runs/1601245135/checkpoints", "Checkpoint directory from training run")
-
+tf.flags.DEFINE_string("checkpoint_dir", f"./runs/{whatModelTimestamp}/checkpoints", "Checkpoint directory from training run")
 FLAGS = tf.flags.FLAGS
-
 dataset = dh.read_my_images("./example/*")
 
 checkpoint_file = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)

@@ -11,39 +11,66 @@ import math
 import pickle
 
 
-presets = [1, 2, 3]
+# presets = [1, 2, 3]
+presets = [1]
+isColab = True
 for preset in presets:
     p = pr.Preset(preset)
     pr.Preset().del_all_flags(tf.flags.FLAGS)
     tf.reset_default_graph()
+    if not isColab:
+        # Model Hyperparameters
+        tf.flags.DEFINE_float("lr", p.lr, "learning rate (default=0.1)")
+        tf.flags.DEFINE_float("lr_decay", p.lr_decay, "learning rate decay rate(default=0.1)")
+        tf.flags.DEFINE_float("l2_reg_lambda", p.l2_reg_lambda, "L2 regularization lambda (default: 0.0)")
+        tf.flags.DEFINE_float("relu_leakiness", p.relu_leakiness, "relu leakiness (default: 0.1)")
+        tf.flags.DEFINE_integer("num_residual_units", p.num_residual_units, "The number of residual_units (default: 5)")
+        tf.flags.DEFINE_integer("num_classes", p.num_classes, "The number of classes (default: 10)")
 
-    # Model Hyperparameters
-    tf.flags.DEFINE_float("lr", p.lr, "learning rate (default=0.1)")
-    tf.flags.DEFINE_float("lr_decay", p.lr_decay, "learning rate decay rate(default=0.1)")
-    tf.flags.DEFINE_float("l2_reg_lambda", p.l2_reg_lambda, "L2 regularization lambda (default: 0.0)")
-    tf.flags.DEFINE_float("relu_leakiness", p.relu_leakiness, "relu leakiness (default: 0.1)")
-    tf.flags.DEFINE_integer("num_residual_units", p.num_residual_units, "The number of residual_units (default: 5)")
-    tf.flags.DEFINE_integer("num_classes", p.num_classes, "The number of classes (default: 10)")
+        # Training parameters
+        tf.flags.DEFINE_integer("batch_size", p.batch_size, "Batch Size (default: 64)")
+        tf.flags.DEFINE_integer("num_epochs", p.num_epochs, "Number of training epochs (default: 200)")
+        tf.flags.DEFINE_integer("evaluate_every", p.evaluate_every, "Evaluate model on dev set after this many steps (default: 100)")
+        tf.flags.DEFINE_integer("checkpoint_every", p.checkpoint_every, "Save model after this many steps (default: 100)")
+        tf.flags.DEFINE_integer("num_checkpoints", p.num_checkpoints, "Number of checkpoints to store (default: 5)")
+        tf.flags.DEFINE_boolean("data_augmentation", p.data_augmentation, "data augmentation option")
 
-    # Training parameters
-    tf.flags.DEFINE_integer("batch_size", p.batch_size, "Batch Size (default: 64)")
-    tf.flags.DEFINE_integer("num_epochs", p.num_epochs, "Number of training epochs (default: 200)")
-    tf.flags.DEFINE_integer("evaluate_every", p.evaluate_every, "Evaluate model on dev set after this many steps (default: 100)")
-    tf.flags.DEFINE_integer("checkpoint_every", p.checkpoint_every, "Save model after this many steps (default: 100)")
-    tf.flags.DEFINE_integer("num_checkpoints", p.num_checkpoints, "Number of checkpoints to store (default: 5)")
-    tf.flags.DEFINE_boolean("data_augmentation", p.data_augmentation, "data augmentation option")
+        # Misc Parameters
+        tf.flags.DEFINE_boolean("allow_soft_placement", p.allow_soft_placement, "Allow device soft device placement")
+        tf.flags.DEFINE_boolean("log_device_placement", p.log_device_placement, "Log placement of ops on devices")
+        FLAGS = tf.flags.FLAGS
 
-    # Misc Parameters
-    tf.flags.DEFINE_boolean("allow_soft_placement", p.allow_soft_placement, "Allow device soft device placement")
-    tf.flags.DEFINE_boolean("log_device_placement", p.log_device_placement, "Log placement of ops on devices")
-    FLAGS = tf.flags.FLAGS
+    elif isColab:
+        # Model Hyperparameters
+        tf.apps.flags.DEFINE_float("lr", p.lr, "learning rate (default=0.1)")
+        tf.apps.flags.DEFINE_float("lr_decay", p.lr_decay, "learning rate decay rate(default=0.1)")
+        tf.apps.flags.DEFINE_float("l2_reg_lambda", p.l2_reg_lambda, "L2 regularization lambda (default: 0.0)")
+        tf.apps.flags.DEFINE_float("relu_leakiness", p.relu_leakiness, "relu leakiness (default: 0.1)")
+        tf.apps.flags.DEFINE_integer("num_residual_units", p.num_residual_units, "The number of residual_units (default: 5)")
+        tf.apps.flags.DEFINE_integer("num_classes", p.num_classes, "The number of classes (default: 10)")
+
+        # Training parameters
+        tf.apps.flags.DEFINE_integer("batch_size", p.batch_size, "Batch Size (default: 64)")
+        tf.apps.flags.DEFINE_integer("num_epochs", p.num_epochs, "Number of training epochs (default: 200)")
+        tf.apps.flags.DEFINE_integer("evaluate_every", p.evaluate_every, "Evaluate model on dev set after this many steps (default: 100)")
+        tf.apps.flags.DEFINE_integer("checkpoint_every", p.checkpoint_every, "Save model after this many steps (default: 100)")
+        tf.apps.flags.DEFINE_integer("num_checkpoints", p.num_checkpoints, "Number of checkpoints to store (default: 5)")
+        tf.apps.flags.DEFINE_boolean("data_augmentation", p.data_augmentation, "data augmentation option")
+
+        # Misc Parameters
+        tf.apps.flags.DEFINE_boolean("allow_soft_placement", p.allow_soft_placement, "Allow device soft device placement")
+        tf.apps.flags.DEFINE_boolean("log_device_placement", p.log_device_placement, "Log placement of ops on devices")
+        FLAGS = tf.apps.flags.FLAGS
 
     (x_train_val, y_train_val), (x_test, y_test) = load_data()
     x_train, y_train, x_test, y_test, x_val, y_val = dh.shuffle_data(x_train_val, y_train_val, x_test, y_test, FLAGS.num_classes)
 
     with tf.Graph().as_default():
-        session_conf = tf.ConfigProto(allow_soft_placement=FLAGS.allow_soft_placement, log_device_placement=FLAGS.log_device_placement)
-        sess = tf.Session(config=session_conf)
+        if not isColab:
+            session_conf = tf.ConfigProto(allow_soft_placement=FLAGS.allow_soft_placement, log_device_placement=FLAGS.log_device_placement)
+            sess = tf.Session(config=session_conf)
+        elif isColab:
+            sess = tf.Session()
         with sess.as_default():
             resnet = ResNet(FLAGS) #ResNet 클래스의 인스턴스 생성 후 Hyperparameter가 정의돼 있는 FLAGS로 초기화
 
@@ -95,7 +122,7 @@ for preset in presets:
                 time_str = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
                 prog = FLAGS.num_epochs * math.ceil(45000/FLAGS.batch_size)
                 # print("{}: step {}, lr {}, loss {:g}, acc {:g}".format(time_str, step, lr, loss, accuracy))
-                print(f"- Preset={p.preset} [{time_str}] Step=({format(step, '05')}/{format(prog, '05')}) Loss={format(loss, '<8g')} Acc={format(accuracy, '<9g')}")
+                print(f"- Pre|Tstmp={p.preset}|{p.timestamp} [{time_str}] Step=({format(step, '05')}/{format(prog, '05')}) Loss={format(loss, '<8g')} Acc={format(accuracy, '<9g')}")
                 train_summary_writer.add_summary(summaries, step)
 
             def dev_step(x_batch, y_batch, writer=None):
@@ -142,13 +169,13 @@ for preset in presets:
                 training_time = (time.time() - start_time) / 60
                 p.training_time = training_time
 
-                filename = f'./INFOS/train_overall.txt'
-                with open(filename, 'a') as ttxt:
-                    s = ''
-                    for key in p.__dict__.keys():
-                        s += str(p.__dict__[key]) + '\t'
-                    ttxt.write(s)
+            filename = f'./INFOS/train_overall.txt'
+            with open(filename, 'a') as ttxt:
+                s = ''
+                for key in p.__dict__.keys():
+                    s += str(p.__dict__[key]) + '\t'
+                ttxt.write(s)
 
-                filename = f'./INFOS/{p.preset}_{p.timestamp}.pickle'
-                with open(filename, 'wb') as pckl:
-                    pickle.dump(filename, pckl)
+            filename = f'./INFOS/{p.preset}_{p.timestamp}.pickle'
+            with open(filename, 'wb') as pckl:
+                pickle.dump(filename, pckl)
