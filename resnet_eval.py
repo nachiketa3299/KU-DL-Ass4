@@ -42,5 +42,11 @@ for pckl in pickles:
                     print('- Timestamp        :', P.test_accuracy)
                     print('- Test Max Accuracy:', test_accuracy)
                     P.finished = True
+        with open('eval_result.txt', 'w') as f:
+            s = ''
+            for key in P.__dict__.keys():
+                s += P.__dict__[key] + '\t'
+            f.write(s)
+
         with open(pckl, 'wb') as pW:
             pickle.dump(P, pW)

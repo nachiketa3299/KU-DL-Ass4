@@ -13,7 +13,7 @@ import pickle
 
 presets = [1, 2, 3]
 for preset in presets:
-    p = pr.Preset(1)
+    p = pr.Preset(preset)
     pr.Preset().del_all_flags(tf.flags.FLAGS)
     tf.reset_default_graph()
 
@@ -142,6 +142,13 @@ for preset in presets:
                 training_time = (time.time() - start_time) / 60
                 p.training_time = training_time
 
-                filename = f'./INFOS/preset_{p.preset}_train_result.pickle'
+                filename = f'./INFOS/train_overall.txt'
+                with open(filename, 'a') as ttxt:
+                    s = ''
+                    for key in p.__dict__.keys():
+                        s += p.__dict__[key] + '\t'
+                    ttxt.write(s)
+
+                filename = f'./INFOS/{p.preset}_{p.timestamp}.pickle'
                 with open(filename, 'wb') as pckl:
                     pickle.dump(filename, pckl)
