@@ -5,18 +5,17 @@ import datetime
 from tensorflow.keras.datasets.cifar10 import load_data
 import data_helpers as dh
 from resnet import ResNet
-import presets_and_results as pr
 
+import presets_and_results as pr
 import math
-import pickle
 
 
 # presets = [1, 2, 3]
-presets = [1]
+presets = [5]
 isColab = True
 for preset in presets:
     p = pr.Preset(preset)
-    pr.Preset().del_all_flags(tf.flags.FLAGS)
+    pr.Preset().del_all_flags(tf.app.flags.FLAGS)
     tf.reset_default_graph()
     if not isColab:
         # Model Hyperparameters
@@ -85,7 +84,7 @@ for preset in presets:
             # Output directory for models and summaries
             p.timestamp = int(time.time())
             out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs", str(p.timestamp)))
-            print("Writing to {}\n".format(out_dir))
+            print("> Writing to {}\n".format(out_dir))
 
             # Summaries for loss and accuracy
             loss_summary = tf.summary.scalar("loss", resnet.loss)
@@ -120,8 +119,7 @@ for preset in presets:
                     feed_dict)
                 time_str = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
                 prog = FLAGS.num_epochs * math.ceil(45000/FLAGS.batch_size)
-                # print("{}: step {}, lr {}, loss {:g}, acc {:g}".format(time_str, step, lr, loss, accuracy))
-                print(f"- Pre-Tstmp={p.preset}-({p.timestamp}) [{time_str}] Step=({format(step, '05')}/{format(prog, '05')}) Loss={format(loss, '<8g')} Acc={format(accuracy, '<9g')}")
+                print(f"- [{time_str}] Preset={p.preset} Tstmp={p.timestamp}  Step=({format(step, '05')}/{format(prog, '05')}) Loss={format(loss, '<8g')} Acc={format(accuracy, '<9g')}")
                 train_summary_writer.add_summary(summaries, step)
 
             def dev_step(x_batch, y_batch, writer=None):
@@ -134,8 +132,7 @@ for preset in presets:
                     feed_dict)
                 time_str = datetime.datetime.now().strftime("%m/%d %H:%M:%S")
                 prog = FLAGS.num_epochs * math.ceil(45000/FLAGS.batch_size)
-                # print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
-                print(f"> Preset={p.preset} [{time_str}] Step=({format(step, '05')}/{format(prog, '05')}) Loss={format(loss, '<8g')} Acc={format(accuracy, '<9g')}")
+                print(f"- [{time_str}] Preset={p.preset} Tstmp={p.timestamp}  Step=({format(step, '05')}/{format(prog, '05')}) Loss={format(loss, '<8g')} Acc={format(accuracy, '<9g')}")
                 if writer:
                     writer.add_summary(summaries, step)
                 return accuracy
@@ -167,14 +164,5 @@ for preset in presets:
 
                 training_time = (time.time() - start_time) / 60
                 p.training_time = training_time
-
-            filename = f'./INFOS/train_overall.txt'
-            with open(filename, 'a') as ttxt:
-                s = ''
-                for key in p.__dict__.keys():
-                    s += str(p.__dict__[key]) + '\t'
-                ttxt.write(s)
-
-            filename = f'./INFOS/{p.preset}_{p.timestamp}.pickle'
-            with open(filename, 'wb') as pckl:
-                pickle.dump(filename, pckl)
+            p.saveCurPresetToPickle()
+            p.saveCurTrainResultToTxt()

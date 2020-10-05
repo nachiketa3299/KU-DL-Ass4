@@ -1,0 +1,4 @@
+model_checkpoint_path: "/content/drive/My Drive/dl_assignment_04/runs/1601870034/checkpoints/model-61600"
+all_model_checkpoint_paths: "/content/drive/My Drive/dl_assignment_04/runs/1601870034/checkpoints/model-54800"
+all_model_checkpoint_paths: "/content/drive/My Drive/dl_assignment_04/runs/1601870034/checkpoints/model-57600"
+all_model_checkpoint_paths: "/content/drive/My Drive/dl_assignment_04/runs/1601870034/checkpoints/model-61600"

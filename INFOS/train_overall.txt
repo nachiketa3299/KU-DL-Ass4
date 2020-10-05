@@ -1,1 +1,5 @@
-
+2	ResNet32	SGD (Momentum)	ReLU	He_normarl	Batch Norm	0.1	0.96	0.001	0.1	5	10	128	200	100	100	3	True	True	False	1601826199	295.2468322674433	56300	0.8684	None	False	
+3	ResNet20	SGD (Momentum)	ReLU	He_normarl	Batch Norm	0.1	0.96	0.001	0.1	3	10	128	200	100	100	3	True	True	False	1601851629	94.58567155599594	50400	0.8596	None	False	
+1	ResNet32	SGD (Momentum)	ReLU	He_normarl	Batch Norm	0.1	1	0.001	0.1	5	10	128	200	100	100	3	True	True	False	1601857360	135.7871199131012	68600	0.8666	None	False	
+4	ResNet56	SGD (Momentum)	ReLU	He_normarl	Batch Norm	0.1	0.96	0.001	0.1	9	10	128	200	100	100	3	True	True	False	1601870034	222.27311489184697	61600	0.8812	None	False	
+5	ResNet56	SGD (Momentum)	ReLU	He_normarl	Batch Norm	0.1	0.9	0.001	0.1	9	10	128	200	100	100	3	True	True	False	1601900363	485.85022802352904	61000	0.876	None	False	

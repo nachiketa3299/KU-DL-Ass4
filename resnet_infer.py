@@ -1,13 +1,18 @@
 import tensorflow as tf
 import data_helpers as dh
 import numpy as np
+import presets_and_results as pr
 
 
 # 이부분에 사용할 모델의 Timestamp를 적으면 추론 시작
 whatModelTimestamp = input("- 추론에 사용할 모델의 타임스탬프를 입력하세요.")
 
 # Eval Parameters
-tf.flags.DEFINE_string("checkpoint_dir", f"./runs/{whatModelTimestamp}/checkpoints", "Checkpoint directory from training run")
+pr.Preset().del_all_flags(tf.app.flags.FLAGS)
+tf.app.flags.DEFINE_string('f', '', 'kernel')
+
+
+tf.app.flags.DEFINE_string("checkpoint_dir", f"./runs/{whatModelTimestamp}/checkpoints", "Checkpoint directory from training run")
 FLAGS = tf.flags.FLAGS
 dataset = dh.read_my_images("./example/*")
 
@@ -25,5 +30,6 @@ with graph.as_default():
         predictions = graph.get_operation_by_name("logit/predictions").outputs[0]
 
         inference_result = sess.run(predictions, feed_dict={X: dataset})
-        print("airplane, automobile, bird, cat, deer, dog, frog, horse, ship, truck")
-        print(inference_result)
+        llist = "airplane, automobile, bird, cat, deer, dog, frog, horse, ship, truck".split(', ')
+        for i in inference_result:
+            print(llist[i])
